@@ -1,0 +1,176 @@
+{
+    "name": "Caudo - Motor de Recomendaciones Financieras",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "new-transaction",
+                "httpMethod": "POST",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook: Nueva transacci\u00f3n",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [240, 300]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "http://host.docker.internal:3000/api/internal/transactions/{{ $json.userId }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "X-API-Key",
+                            "value": "n8n-internal-api-key-change-in-production"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "get-transactions",
+            "name": "Consultar transacciones",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [460, 240]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "http://host.docker.internal:3000/api/internal/income/{{ $json.userId }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "X-API-Key",
+                            "value": "n8n-internal-api-key-change-in-production"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "get-income",
+            "name": "Consultar ingresos del mes",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [460, 480]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Motor de reglas financieras\nconst transactions = $node['Consultar transacciones'].all.map(i => i.json);\nconst totalIngresos = parseFloat($node['Consultar ingresos del mes'].first.json.total_ingresos);\nconst userId = $node['Webhook: Nueva transacci\\u00f3n'].first.json.body.userId;\nconst recommendations = [];\n\n// Agrupar gastos por categor\u00eda\nconst gastosPorCategoria = {};\nconst gastosRecientes = {};\nlet totalEgresos = 0;\n\ntransactions.forEach(t => {\n  if (t.tipo === 'egreso') {\n    totalEgresos += parseFloat(t.monto);\n    const cat = t.category?.nombre || 'Sin categor\u00eda';\n    gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + parseFloat(t.monto);\n    \n    // Track recent spending for subscription detection (store date + amount)\n    const key = `${cat}-${t.descripcion || 'sin-desc'}`;\n    if (!gastosRecientes[key]) gastosRecientes[key] = [];\n    gastosRecientes[key].push({ fecha: new Date(t.fecha), monto: parseFloat(t.monto) });\n  }\n});\n\n// Regla 1: Gasto en categor\u00eda > 30% del ingreso mensual\nif (totalIngresos > 0) {\n  for (const [cat, total] of Object.entries(gastosPorCategoria)) {\n    const porcentaje = (total / totalIngresos) * 100;\n    if (porcentaje > 30) {\n      recommendations.push({\n        user_id: userId,\n        contenido: `Tu gasto en ${cat} representa el ${porcentaje.toFixed(1)}% de tus ingresos. Considera reducirlo para mantener un balance saludable.`,\n        tipo: 'alerta',\n        leida: false\n      });\n    }\n  }\n}\n\n// Regla 2: Gastos totales > 80% de ingresos\nif (totalIngresos > 0 && (totalEgresos / totalIngresos) > 0.8) {\n  recommendations.push({\n    user_id: userId,\n    contenido: 'Tus gastos superan el 80% de tus ingresos este mes. Es recomendable mantener los gastos por debajo del 70% para poder ahorrar.',\n    tipo: 'alerta',\n    leida: false\n  });\n}\n\n// Regla 3: Sin ahorro registrado\nconst hayAhorro = transactions.some(t => \n  t.tipo === 'egreso' && t.category?.nombre?.toLowerCase().includes('ahorro')\n);\nif (!hayAhorro && totalIngresos > 0) {\n  recommendations.push({\n    user_id: userId,\n    contenido: 'No hemos registrado movimientos de ahorro este mes. Te recomendamos destinar al menos el 10% de tus ingresos a una meta de ahorro.',\n    tipo: 'ahorro',\n    leida: false\n  });\n}\n\n// Regla 4: Gastos recurrentes (posibles suscripciones)\n// Improved: checks similar amounts (within 20% variance) AND evenly spaced dates (stddev within 5 days)\nfor (const [key, entries] of Object.entries(gastosRecientes)) {\n  if (entries.length >= 3) {\n    const dates = entries.map(e => e.fecha).sort((a, b) => new Date(a) - new Date(b));\n    const amounts = entries.map(e => e.monto);\n    \n    // Check similar amounts (within 20% variance from mean)\n    const avgAmount = amounts.reduce((s, a) => s + a, 0) / amounts.length;\n    const maxDev = amounts.reduce((max, a) => Math.max(max, Math.abs(a - avgAmount) / Math.max(avgAmount, 1)), 0);\n    const amountsSimilar = maxDev <= 0.20;\n    \n    // Check evenly spaced intervals (stddev <= 5 days)\n    let intervals = [];\n    for (let i = 1; i < dates.length; i++) {\n      intervals.push((new Date(dates[i]) - new Date(dates[i-1])) / (1000 * 60 * 60 * 24));\n    }\n    const meanInt = intervals.reduce((s, d) => s + d, 0) / intervals.length;\n    const variance = intervals.reduce((s, d) => s + Math.pow(d - meanInt, 2), 0) / intervals.length;\n    const stddev = Math.sqrt(variance);\n    const evenlySpaced = stddev <= 5;\n    \n    if (amountsSimilar || evenlySpaced) {\n      const [cat] = key.split('-');\n      recommendations.push({\n        user_id: userId,\n        contenido: `Hemos detectado gastos recurrentes en ${cat} (${entries.length} veces este mes). Podr\u00eda ser una suscripci\u00f3n que vale la pena revisar.`,\n        tipo: 'consejo',\n        leida: false\n      });\n    }\n  }\n}\n\n// Return recommendations as a single item with the full array for batch POST\nreturn [{ json: { recommendations } }];"
+            },
+            "id": "rules-engine",
+            "name": "Motor de reglas",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [680, 300]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://host.docker.internal:3000/api/internal/recommendations",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "X-API-Key",
+                            "value": "n8n-internal-api-key-change-in-production"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json.recommendations) }}",
+                "options": {}
+            },
+            "id": "post-recommendations",
+            "name": "Guardar recomendaciones",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [900, 300]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{\"status\": \"ok\", \"recommendations\": {{ $json.length }}}",
+                "options": {}
+            },
+            "id": "response-node",
+            "name": "Responder",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [1120, 300]
+        }
+    ],
+    "connections": {
+        "Webhook: Nueva transacci\u00f3n": {
+            "main": [
+                [
+                    {
+                        "node": "Consultar transacciones",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Consultar ingresos del mes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Consultar transacciones": {
+            "main": [
+                [
+                    {
+                        "node": "Motor de reglas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Consultar ingresos del mes": {
+            "main": [
+                [
+                    {
+                        "node": "Motor de reglas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Motor de reglas": {
+            "main": [
+                [
+                    {
+                        "node": "Guardar recomendaciones",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Guardar recomendaciones": {
+            "main": [
+                [
+                    {
+                        "node": "Responder",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [],
+    "triggerCount": 1,
+    "updatedAt": "2026-06-04T00:00:00.000Z",
+    "versionId": "2"
+}
