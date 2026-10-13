@@ -22,6 +22,12 @@ export class InternalController {
     return this.internalService.getCurrentMonthIncome(userId);
   }
 
+  @Get('rules')
+  @ApiOperation({ summary: 'Obtener las reglas activas del motor para n8n' })
+  getActiveRules() {
+    return this.internalService.getActiveRules();
+  }
+
   @Post('recommendations')
   @ApiOperation({ summary: 'Crear recomendaciones en lote desde n8n' })
   batchCreateRecommendations(@Body() recommendations: Array<{

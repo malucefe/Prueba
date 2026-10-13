@@ -14,12 +14,14 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
 import { FilesModule } from './files/files.module';
 import { SeedModule } from './seed/seed.module';
 import { InternalModule } from './internal/internal.module';
+import { RulesModule } from './rules/rules.module';
 
 import { User } from './users/entities/user.entity';
 import { Category } from './categories/entities/category.entity';
 import { Transaction } from './transactions/entities/transaction.entity';
 import { Goal } from './goals/entities/goal.entity';
 import { Recommendation } from './recommendations/entities/recommendation.entity';
+import { RecommendationRule } from './rules/entities/recommendation-rule.entity';
 
 @Module({
   imports: [
@@ -47,7 +49,7 @@ import { Recommendation } from './recommendations/entities/recommendation.entity
         username: configService.get<string>('DB_USERNAME', 'postgres'),
         password: configService.getOrThrow<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME', 'caudo'),
-        entities: [User, Category, Transaction, Goal, Recommendation],
+        entities: [User, Category, Transaction, Goal, Recommendation, RecommendationRule],
         synchronize: configService.get('NODE_ENV') !== 'production',
         logging: false,
       }),
@@ -70,6 +72,7 @@ import { Recommendation } from './recommendations/entities/recommendation.entity
     FilesModule,
     SeedModule,
     InternalModule,
+    RulesModule,
   ],
 })
 export class AppModule {}

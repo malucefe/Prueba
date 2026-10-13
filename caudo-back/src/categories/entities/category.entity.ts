@@ -29,6 +29,11 @@ export class Category {
   @Column({ length: 50, nullable: true })
   icono: string;
 
+  // HU-20: las categorías se desactivan en lugar de eliminarse cuando ya
+  // tienen transacciones asociadas.
+  @Column({ type: 'boolean', default: true })
+  activo: boolean;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 

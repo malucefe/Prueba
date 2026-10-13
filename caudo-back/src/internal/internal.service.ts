@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { Recommendation, RecommendationType } from '../recommendations/entities/recommendation.entity';
+import { RecommendationRule } from '../rules/entities/recommendation-rule.entity';
 
 @Injectable()
 export class InternalService {
@@ -11,7 +12,16 @@ export class InternalService {
     private readonly transactionsRepository: Repository<Transaction>,
     @InjectRepository(Recommendation)
     private readonly recommendationsRepository: Repository<Recommendation>,
+    @InjectRepository(RecommendationRule)
+    private readonly rulesRepository: Repository<RecommendationRule>,
   ) {}
+
+  async getActiveRules() {
+    return this.rulesRepository.find({
+      where: { activa: true },
+      order: { key: 'ASC' },
+    });
+  }
 
   async getRecentTransactions(userId: string, limit = 30) {
     return this.transactionsRepository.find({
