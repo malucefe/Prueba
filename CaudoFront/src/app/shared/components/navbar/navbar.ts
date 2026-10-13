@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { LucideAngularModule, LayoutDashboard, ArrowLeftRight, Target, User, LogOut, Wallet, Menu, X } from 'lucide-angular';
+import { LucideAngularModule, LayoutDashboard, ArrowLeftRight, Target, User, LogOut, Wallet, Menu, X, ShieldCheck } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 
@@ -35,6 +35,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <lucide-angular [img]="User" size="18"></lucide-angular>
           <span>Perfil</span>
         </a>
+        @if (authService.getCurrentUser()?.role === 'admin') {
+          <a routerLink="/admin" routerLinkActive="active" class="nav-link" (click)="mobileMenuOpen = false">
+            <lucide-angular [img]="ShieldCheck" size="18"></lucide-angular>
+            <span>Admin</span>
+          </a>
+        }
       </div>
 
       <div class="navbar-actions">
@@ -248,6 +254,7 @@ export class NavbarComponent {
   Wallet = Wallet;
   Menu = Menu;
   X = X;
+  ShieldCheck = ShieldCheck;
 
   mobileMenuOpen = false;
 

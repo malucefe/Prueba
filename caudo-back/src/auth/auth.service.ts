@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { Role } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -28,15 +29,17 @@ export class AuthService {
       nombre: registerDto.nombre,
       email: registerDto.email,
       passwordHash,
+      role: Role.USER,
     });
 
-    const token = this.generateToken(user.id, user.email);
+    const token = this.generateToken(user.id, user.email, user.role);
 
     return {
       user: {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
+        role: user.role,
       },
       access_token: token,
     };
@@ -48,6 +51,12 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        'Tu cuenta está suspendida. Contacta al administrador.',
+      );
+    }
+
     const isPasswordValid = await bcrypt.compare(
       loginDto.password,
       user.passwordHash,
@@ -56,20 +65,25 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const token = this.generateToken(user.id, user.email);
+    const token = this.generateToken(user.id, user.email, user.role);
 
     return {
       user: {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
+        role: user.role,
       },
       access_token: token,
     };
   }
 
-  private generateToken(userId: string, email: string): string {
-    const payload = { sub: userId, email };
+  private generateToken(
+    userId: string,
+    email: string,
+    role: string,
+  ): string {
+    const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload);
   }
 }

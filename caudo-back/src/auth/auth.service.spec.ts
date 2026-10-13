@@ -17,6 +17,8 @@ describe('AuthService', () => {
     nombre: 'Juan Pérez',
     email: 'juan@email.com',
     passwordHash: 'hashed-password',
+    role: 'user',
+    isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -69,16 +71,19 @@ describe('AuthService', () => {
         nombre: 'Juan Pérez',
         email: 'juan@email.com',
         passwordHash: 'hashed-password',
+        role: 'user',
       });
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: 'user-uuid-123',
         email: 'juan@email.com',
+        role: 'user',
       });
       expect(result).toEqual({
         user: {
           id: 'user-uuid-123',
           nombre: 'Juan Pérez',
           email: 'juan@email.com',
+          role: 'user',
         },
         access_token: mockToken,
       });
@@ -117,12 +122,14 @@ describe('AuthService', () => {
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: 'user-uuid-123',
         email: 'juan@email.com',
+        role: 'user',
       });
       expect(result).toEqual({
         user: {
           id: 'user-uuid-123',
           nombre: 'Juan Pérez',
           email: 'juan@email.com',
+          role: 'user',
         },
         access_token: mockToken,
       });
@@ -150,6 +157,22 @@ describe('AuthService', () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         'Credenciales inválidas',
       );
+    });
+
+    it('should reject inactive (suspended) accounts with an informative message', async () => {
+      (usersService.findByEmail as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        isActive: false,
+      });
+
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'Tu cuenta está suspendida. Contacta al administrador.',
+      );
+      expect(bcrypt.compare).not.toHaveBeenCalled();
+      expect(jwtService.sign).not.toHaveBeenCalled();
     });
   });
 });

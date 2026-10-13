@@ -10,6 +10,11 @@ import { Transaction } from '../../transactions/entities/transaction.entity';
 import { Goal } from '../../goals/entities/goal.entity';
 import { Recommendation } from '../../recommendations/entities/recommendation.entity';
 
+export enum Role {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -23,6 +28,12 @@ export class User {
 
   @Column({ name: 'password_hash' })
   passwordHash: string;
+
+  @Column({ type: 'enum', enum: Role, default: Role.USER })
+  role: Role;
+
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
