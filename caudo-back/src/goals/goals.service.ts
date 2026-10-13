@@ -37,6 +37,10 @@ export class GoalsService {
     return goal;
   }
 
+  async count(): Promise<number> {
+    return this.goalsRepository.count();
+  }
+
   async update(userId: string, id: string, dto: UpdateGoalDto): Promise<Goal> {
     const goal = await this.findOne(userId, id);
     Object.assign(goal, dto);

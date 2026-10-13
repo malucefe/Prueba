@@ -102,6 +102,10 @@ export class TransactionsService {
     await this.transactionsRepository.remove(transaction);
   }
 
+  async count(): Promise<number> {
+    return this.transactionsRepository.count();
+  }
+
   async getSummary(userId: string, mes: number, anio: number) {
     const startDate = new Date(anio, mes - 1, 1);
     const endDate = new Date(anio, mes, 0);

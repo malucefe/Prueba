@@ -50,6 +50,10 @@ export class RecommendationsService {
     });
   }
 
+  async count(): Promise<number> {
+    return this.recommendationsRepository.count();
+  }
+
   async create(data: Partial<Recommendation>): Promise<Recommendation> {
     const rec = this.recommendationsRepository.create(data);
     return this.recommendationsRepository.save(rec);
