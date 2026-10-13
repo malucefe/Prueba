@@ -1,7 +1,11 @@
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { provideCharts, BaseChartDirective } from 'ng2-charts';
+import {
+  provideCharts,
+  withDefaultRegisterables,
+  BaseChartDirective,
+} from 'ng2-charts';
 import { LucideAngularModule, TrendingUp, TrendingDown, Wallet, Target, Brain, ArrowUpRight, ArrowDownRight, Plus } from 'lucide-angular';
 import { SkeletonCardComponent } from '../../shared/components/skeleton/skeleton-card';
 import { CopCurrencyPipe } from '../../shared/pipes/cop-currency.pipe';
@@ -17,7 +21,7 @@ import { Goal } from '../../core/models/goal.model';
   standalone: true,
   imports: [CommonModule, RouterLink, BaseChartDirective, LucideAngularModule, SkeletonCardComponent, CopCurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provideCharts()],
+  providers: [provideCharts(withDefaultRegisterables())],
   template: `
     <div class="dashboard">
       @if (loading()) {
