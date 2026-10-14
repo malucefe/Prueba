@@ -67,12 +67,18 @@ services:
         value: 'https://caudo-backend.onrender.com'
 
   # ------------------------------------------------------------------- n8n
+  # runtime: image (patrón oficial de Render para n8n, sin Dockerfile propio:
+  # la imagen n8nio/n8n no expone shell y Render enruta al puerto detectado).
   - type: web
     name: caudo-n8n
-    runtime: docker
+    runtime: image
     plan: free
-    dockerfilePath: n8n/Dockerfile
+    image:
+      url: docker.io/n8nio/n8n:latest
     envVars:
+      # Acelera la detección del puerto que n8n abre por defecto.
+      - key: PORT
+        value: '5678'
       # Acceso a $env en expresiones del workflow (BACKEND_URL, N8N_API_KEY).
       - key: N8N_BLOCK_ENV_ACCESS_IN_NODE
         value: 'false'

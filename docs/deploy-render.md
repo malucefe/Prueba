@@ -13,7 +13,7 @@ Blueprint de la raíz (`render.yaml`): `caudo-db` (Postgres), `caudo-backend`
 ## 1. Subir la rama
 
 ```bash
-git add render.yaml n8n/Dockerfile docs/deploy-render.md
+git add render.yaml docs/deploy-render.md
 git commit -m "feat(deploy): blueprint de Render y docs de despliegue"
 git push origin devLuis
 ```
@@ -59,8 +59,29 @@ ejecuta los primeros builds (tarda unos minutos). Estado esperado:
 - `caudo-db`: *Available*.
 - `caudo-backend`: *Live*, health check en `/api`.
 - `caudo-frontend`: *Live*, health check en `/`.
-- `caudo-n8n`: *Live* (levanta con el Dockerfile `n8n/Dockerfile`, que adapta
-  `N8N_PORT` al puerto que Render inyecta).
+- `caudo-n8n`: *Live* (runtime `image` con la imagen oficial `n8nio/n8n`, el
+  patrón recomendado por Render; no hay Dockerfile propio — la imagen no
+  expone shell y Render enruta al puerto 5678 que detecta automáticamente).
+
+## 3.5. Reemplaza los subdominios (importante)
+
+Render **no** usa los subdominios fijos del `render.yaml` (`caudo-backend.onrender.com`
+etc.): asigna una URL con sufijo aleatorio, por ejemplo
+`https://caudo-backend-abc123.onrender.com`. Copiá las URLs reales de cada
+servicio y actualizalas en las env vars de **otros** servicios donde aparecen
+los nombres fijos:
+
+| Servicio | Variable | Valor |
+|---|---|---|
+| caudo-backend | `N8N_WEBHOOK_URL` | `https://<n8n-real>/webhook/new-transaction` |
+| caudo-backend | `ALLOWED_ORIGINS` | `https://<frontend-real>` |
+| caudo-frontend | `BACKEND_URL` | `https://<backend-real>` |
+| caudo-n8n | `BACKEND_URL` | `https://<backend-real>` |
+| caudo-n8n | `N8N_HOST` / `N8N_EDITOR_BASE_URL` | `<n8n-real>` (sin https://) |
+| caudo-n8n | `WEBHOOK_URL` | `https://<n8n-real>/` |
+
+Guardá cada cambio con *Save & Deploy*. El `ALLOWED_ORIGINS` mal seteado es
+el síntoma clásico: el frontend carga pero el login falla con CORS.
 
 ## 4. Importar y activar el workflow en n8n
 
