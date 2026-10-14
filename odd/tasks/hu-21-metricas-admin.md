@@ -74,7 +74,7 @@ actividad — es la base para el argumento de "plataforma operativa" de la tesis
 - [x] T1 — Task doc + espejo Engram (inline)
 - [x] T2 — Módulo backend metrics con TDD RED→GREEN (delegado: writer)
 - [x] T3 — Frontend admin-metrics: service, componente, ruta, nav (mismo writer)
-- [ ] T4 — Verificación final (tests backend completos + build backend + build
+- [x] T4 — Verificación final (tests backend completos + build backend + build
       frontend), commit work-unit, evidencia en este doc
 
 ## Criterios de aceptación
@@ -109,6 +109,12 @@ cd CaudoFront && npm.cmd run build
   hasta medianoche UTC excluía todo el día `hasta`; ahora
   `And(MoreThanOrEqual(desde), LessThan(día-siguiente))`, TDD RED→GREEN).
   Suite final 112/112, builds backend y frontend OK.
+- 2026-10-14: T4 commit work-unit `c9c43e5` en devLuis. Revisión nativa
+  (RDD on, riesgo medium, lente review-reliability): START con consentimiento
+  del usuario; STATUS con el binding devolvió `operation_timeout` (fase
+  pre_native, mutation_outcome not_started) en dos intentos — el usuario
+  decidió continuar sin reporte ni recibo nativo. La entrega sigue la política
+  ordinary del repo; verificación propia: 112/112 + ambos builds.
 - 2026-10-14: T2 — módulo `caudo-back/src/metrics/` (controller con guards
   HU-19/20 + validación de fechas, service con `Between` + agregación en JS,
   module con `forFeature`). Specs escritos primero; RED verificado con mutación
