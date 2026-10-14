@@ -17,7 +17,7 @@ services:
     runtime: node
     rootDir: caudo-back
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /api
     envVars:
@@ -56,7 +56,7 @@ services:
     runtime: node
     rootDir: CaudoFront
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run serve:ssr:CaudoFront
     healthCheckPath: /
     envVars:
