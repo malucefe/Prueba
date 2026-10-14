@@ -17,6 +17,7 @@ import { FilesModule } from './files/files.module';
 import { SeedModule } from './seed/seed.module';
 import { InternalModule } from './internal/internal.module';
 import { RulesModule } from './rules/rules.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 import { User } from './users/entities/user.entity';
 import { Category } from './categories/entities/category.entity';
@@ -146,6 +147,7 @@ function parseDatabaseUrl(url?: string): ParsedDatabaseUrl | null {
     SeedModule,
     InternalModule,
     RulesModule,
+    MetricsModule,
   ],
 })
 export class AppModule {}

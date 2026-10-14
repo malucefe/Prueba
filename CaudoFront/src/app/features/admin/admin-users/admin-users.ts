@@ -30,6 +30,7 @@ import { User, CreateUserRequest, UpdateUserRequest } from '../../../core/models
         <a routerLink="/admin" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Usuarios</a>
         <a routerLink="/admin/categorias" routerLinkActive="active">Categorías</a>
         <a routerLink="/admin/reglas" routerLinkActive="active">Reglas del motor</a>
+        <a routerLink="/admin/metricas" routerLinkActive="active">Métricas</a>
       </nav>
 
       @if (loading()) {
