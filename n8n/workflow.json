@@ -17,7 +17,7 @@
         {
             "parameters": {
                 "method": "GET",
-                "url": "={{ 'http://backend:3000/api/internal/transactions/' + $json.body.userId }}",
+                "url": "={{ ($env.BACKEND_URL || 'http://backend:3000') + '/api/internal/transactions/' + $json.body.userId }}",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
@@ -38,7 +38,7 @@
         {
             "parameters": {
                 "method": "GET",
-                "url": "={{ 'http://backend:3000/api/internal/income/' + $('Webhook: Nueva transacci\u00f3n').first().json.body.userId }}",
+                "url": "={{ ($env.BACKEND_URL || 'http://backend:3000') + '/api/internal/income/' + $('Webhook: Nueva transacci\u00f3n').first().json.body.userId }}",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
@@ -59,7 +59,7 @@
         {
             "parameters": {
                 "method": "GET",
-                "url": "http://backend:3000/api/internal/rules",
+                "url": "={{ ($env.BACKEND_URL || 'http://backend:3000') + '/api/internal/rules' }}",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
@@ -91,7 +91,7 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://backend:3000/api/internal/recommendations",
+                "url": "={{ ($env.BACKEND_URL || 'http://backend:3000') + '/api/internal/recommendations' }}",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [

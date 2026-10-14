@@ -14,9 +14,16 @@ async function bootstrap() {
   // Filtro global de excepciones
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // CORS para el frontend Angular
+  // CORS para el frontend Angular.
+  // ALLOWED_ORIGINS: lista separada por comas (producción: URL del frontend en Render).
+  // Sin la env, se mantiene el default local http://localhost:4200.
+  const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
   app.enableCors({
-    origin: ['http://localhost:4200'],
+    origin: allowedOrigins.length > 0 ? allowedOrigins : ['http://localhost:4200'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

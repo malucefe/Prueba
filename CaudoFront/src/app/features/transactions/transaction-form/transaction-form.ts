@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, ArrowLeftRight, Tag, DollarSign, Calendar, FileText, ArrowLeft, Check } from 'lucide-angular';
@@ -235,6 +235,7 @@ import { Category } from '../../../core/models/category.model';
 export class TransactionFormComponent implements OnInit {
   private transactionService = inject(TransactionService);
   private categoryService = inject(CategoryService);
+  private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
   private toast = inject(ToastService);
 
@@ -258,6 +259,9 @@ export class TransactionFormComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     this.loadCategories('egreso');
   }
 

@@ -28,6 +28,12 @@ export class SeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // SEED_ENABLED=false apaga TODO el seed (deploy sin tocar datos existentes).
+    if (process.env['SEED_ENABLED'] === 'false') {
+      this.logger.log('SEED_ENABLED=false: seed deshabilitado, se omite');
+      return;
+    }
+
     await this.seedCategories();
     await this.seedRules();
     await this.seedUsers();
@@ -137,8 +143,23 @@ export class SeedService implements OnModuleInit {
       return;
     }
 
-    const adminHash = await bcrypt.hash('Admin1234!', 12);
-    const userHash = await bcrypt.hash('User1234!', 12);
+    // Contraseñas desde env. En producción NO hay defaults: si faltan, se
+    // advierte y se omite SOLO el seed de usuarios (el resto del seed corre).
+    const isProduction = process.env['NODE_ENV'] === 'production';
+    const adminPassword =
+      process.env['SEED_ADMIN_PASSWORD'] ?? (isProduction ? undefined : 'Admin1234!');
+    const userPassword =
+      process.env['SEED_USER_PASSWORD'] ?? (isProduction ? undefined : 'User1234!');
+
+    if (!adminPassword || !userPassword) {
+      this.logger.warn(
+        'Faltan SEED_ADMIN_PASSWORD y/o SEED_USER_PASSWORD en producción: se omite el seed de usuarios',
+      );
+      return;
+    }
+
+    const adminHash = await bcrypt.hash(adminPassword, 12);
+    const userHash = await bcrypt.hash(userPassword, 12);
 
     await this.usersService.create({
       nombre: 'Admin Caudo',

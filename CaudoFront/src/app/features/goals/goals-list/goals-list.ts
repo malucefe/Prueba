@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Target, Trash2, Calendar, TrendingUp, Check, X } from 'lucide-angular';
 import { SkeletonCardComponent } from '../../../shared/components/skeleton/skeleton-card';
@@ -265,6 +265,7 @@ import { Goal, CreateGoal } from '../../../core/models/goal.model';
 export class GoalsListComponent implements OnInit {
   private goalService = inject(GoalService);
   private toast = inject(ToastService);
+  private platformId = inject(PLATFORM_ID);
 
   Plus = Plus;
   X = X;
@@ -281,7 +282,10 @@ export class GoalsListComponent implements OnInit {
   newGoal: CreateGoal = { nombre: '', montoObjetivo: 0, fechaLimite: '' };
 
   ngOnInit(): void {
-    this.loadGoals();
+    // Solo en browser: en SSR se conserva el skeleton (loading) inicial.
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadGoals();
+    }
   }
 
   loadGoals(): void {

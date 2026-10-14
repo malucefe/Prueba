@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, User, Mail, Calendar, Check, Edit2 } from 'lucide-angular';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner';
@@ -164,6 +164,7 @@ import { User as UserModel } from '../../core/models/user.model';
 export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
   private toast = inject(ToastService);
+  private platformId = inject(PLATFORM_ID);
 
   UserIcon = User;
   Mail = Mail;
@@ -177,6 +178,10 @@ export class ProfileComponent implements OnInit {
   loadingSubmit = false;
 
   ngOnInit(): void {
+    // Solo en browser: en SSR no hay token/sesión y el fetch rompería el build.
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     this.authService.getProfile().subscribe({
       next: (data) => {
         this.user = data;

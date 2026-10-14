@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
   provideCharts,
@@ -419,6 +419,7 @@ export class DashboardComponent implements OnInit {
   private transactionService = inject(TransactionService);
   private recommendationService = inject(RecommendationService);
   private goalService = inject(GoalService);
+  private platformId = inject(PLATFORM_ID);
 
   TrendingUp = TrendingUp;
   TrendingDown = TrendingDown;
@@ -481,7 +482,11 @@ export class DashboardComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    this.loadData();
+    // Solo en browser: en SSR se conserva el estado loading inicial y la
+    // hidratación reemplaza el marcador cuando llegan los datos reales.
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadData();
+    }
   }
 
   private loadData(): void {
