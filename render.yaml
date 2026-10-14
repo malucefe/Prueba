@@ -1,0 +1,119 @@
+# Blueprint de Render para Caudo (free tier).
+# 4 recursos: Postgres + backend NestJS + frontend Angular SSR + n8n.
+# Sintaxis validada contra el esquema oficial https://render.com/schema/render.yaml.json
+# (fromDatabase requiere {name, property}; no existe fromDatabaseApi en el esquema actual).
+# OJO: Render NO hace interpolación de variables en este archivo (ni siquiera $PORT).
+
+databases:
+  - name: caudo-db
+    plan: free
+    databaseName: caudo
+    user: caudo
+
+services:
+  # ---------------------------------------------------------------- backend
+  - type: web
+    name: caudo-backend
+    runtime: node
+    rootDir: caudo-back
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      # Sincroniza el schema directo (demo efímera; sin migraciones todavía).
+      - key: DB_SYNC
+        value: 'true'
+      - key: SEED_ENABLED
+        value: 'true'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: caudo-db
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: N8N_API_KEY
+        sync: false
+      - key: N8N_ENCRYPTION_KEY
+        sync: false
+      # En producción el seed de usuarios exige contraseñas explícitas.
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_USER_PASSWORD
+        sync: false
+      - key: N8N_WEBHOOK_URL
+        value: 'https://caudo-n8n.onrender.com/webhook/new-transaction'
+      - key: ALLOWED_ORIGINS
+        value: 'https://caudo-frontend.onrender.com'
+
+  # -------------------------------------------------------------- frontend
+  - type: web
+    name: caudo-frontend
+    runtime: node
+    rootDir: CaudoFront
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run serve:ssr:CaudoFront
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      # El server.ts de Angular SSR proxya /api/* hacia este backend.
+      - key: BACKEND_URL
+        value: 'https://caudo-backend.onrender.com'
+
+  # ------------------------------------------------------------------- n8n
+  - type: web
+    name: caudo-n8n
+    runtime: docker
+    plan: free
+    dockerfilePath: n8n/Dockerfile
+    envVars:
+      # Acceso a $env en expresiones del workflow (BACKEND_URL, N8N_API_KEY).
+      - key: N8N_BLOCK_ENV_ACCESS_IN_NODE
+        value: 'false'
+      - key: N8N_HOST
+        value: caudo-n8n.onrender.com
+      - key: N8N_PROTOCOL
+        value: https
+      - key: WEBHOOK_URL
+        value: 'https://caudo-n8n.onrender.com/'
+      - key: N8N_EDITOR_BASE_URL
+        value: 'https://caudo-n8n.onrender.com'
+      - key: N8N_DIAGNOSTICS_ENABLED
+        value: 'false'
+      # Deben coincidir con las del caudo-backend (mismo valor en ambos servicios).
+      - key: N8N_ENCRYPTION_KEY
+        sync: false
+      - key: N8N_API_KEY
+        sync: false
+      # Usa este valor en n8n/workflow.json ($env.BACKEND_URL).
+      - key: BACKEND_URL
+        value: 'https://caudo-backend.onrender.com'
+      # Base de datos compartida con el backend.
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_HOST
+        fromDatabase:
+          name: caudo-db
+          property: host
+      - key: DB_POSTGRESDB_PORT
+        fromDatabase:
+          name: caudo-db
+          property: port
+      - key: DB_POSTGRESDB_USER
+        fromDatabase:
+          name: caudo-db
+          property: user
+      - key: DB_POSTGRESDB_PASSWORD
+        fromDatabase:
+          name: caudo-db
+          property: password
+      - key: DB_POSTGRESDB_DATABASE
+        fromDatabase:
+          name: caudo-db
+          property: database
